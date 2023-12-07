@@ -18,25 +18,30 @@ class VirtualRoom:
 		self.objectList = ['chair', 'clock']
 
 		self.objectPath = "../object/"
-		#self.wallImgPath = "../width_img/"
+		self.existObjectList = [f for f in os.listdir(self.objectPath) if os.path.isdir(os.path.join(self.objectPath, f))]
 
 		self.ground = None
 		self.wall = None
-		self.existObjectList = [f for f in os.listdir(self.objectPath) if os.path.isdir(os.path.join(self.objectPath, f))]
-		self.draggableObjectList = None
+
+		self.currentObject = None
+		self.objectMenu = None
+		self.listUI = None
 
 		EditorCamera(rotation=(30,10,0))
 
 
 	def run(self):
-		self.modelRoom()
+		self.createRoom()
+
+		self.setObjectListUi()
 
 		self.setObjectMenu()
+#temp = Draggable(parent=scene, scale=1, model=self.objectPath+"clock/Clock.c4d", position=(0, 0))
 
 		self.app.run()
 
 
-	def modelRoom(self):
+	def createRoom(self):
 		#scale (가로,두께,세로)
 		self.ground = Entity(model='plane', scale=(self.length,1,self.width), color=color.white, texture='white_cube', texture_scale=(50,50), collider='box')
 
@@ -52,15 +57,72 @@ class VirtualRoom:
 		temp = []
 		for obj in self.objectList:
 			if obj in self.existObjectList:
-				temp.append(DropdownMenuButton(obj))
+				temp.append(DropdownMenuButton(obj, on_click=self.listClick))
 
-		self.draggableObjectList = DropdownMenu('object list',
-				buttons=(temp),
-				parent=Draggable(model=Quad(), scale_x=.3,scale_y=.1, position=window.top_right/4*3), scale_x=2, scale_y=1)
+		self.objectMenu = DropdownMenu('object list', buttons=(temp), parent=Draggable(model=Quad(), scale_x=.2,scale_y=.1, position=window.top_right/2), scale_x=1.5, scale_y=1)
+		self.objectMenu.position = self.objectMenu.position+Vec2(.4,0)
 
-		self.draggableObjectList.position = self.draggableObjectList.position+Vec2(1.1,0)
+	def setObjectListUi(self):
+		self.listUI = Draggable(parent = camera.ui, model = 'quad', scale = (.4, .3), origin = (-.5, .5), position = (-.2,.2), texture = 'white_cube', texture_scale = (3,2), color = color.light_gray, visible=False)
 
-#temp = (Draggable(parent=scene, scale=1, model=self.objectPath+obj+"_01.obj", position=(0, 0)))
+	def initList(self):
+		for child in self.listUI.children:
+			destroy(child)
+
+	def listClick(self):
+		self.listUI.visible=False
+		self.initList()
+		self.currentObject = mouse.hovered_entity.text
+		invoke(self.selectObject, delay=0.1)
+
+	def selectObject(self):
+		self.listUI.visible=True
+		self.setObjectList()
+	
+	def findFreeSpace(self):
+		for y in range(2):
+			for x in range(3):
+				grid_positions = [(int(e.x*self.listUI.texture_scale[0]), int(e.y*self.listUI.texture_scale[1])) for e in self.listUI.children]
+
+				if not (x,-y) in grid_positions:
+					return x, y
+
+	def findFolder(self):
+		path = self.objectPath+self.currentObject
+		imgFile = []
+		objFile = []
+
+		folder = []
+		for name in os.listdir(path):
+			folder.append(os.path.join(path, name))
+
+		for f in folder:
+			if os.path.isdir(f):
+				for fn in os.listdir(f):
+					fPath = os.path.join(f, fn)
+
+					if fn.lower().endswith(('.jpg', '.jpeg', '.png')):
+						imgFile.append(fPath)
+
+					elif fn.lower().endswith('.obj'):
+						objFile.append(fPath)
+
+		return imgFile, objFile
+
+	def setObjectList(self):
+		imgFile, objFile = self.findFolder()
+
+		for img, obj in zip(imgFile, objFile):
+			x, y = self.findFreeSpace()
+
+			icon = Button(name = ''.join(img.split('/')[-3:-1]), parent = self.listUI, model = 'quad', texture = img, color = color.white, scale_x = 1/self.listUI.texture_scale[0], scale_y = 1/self.listUI.texture_scale[1], origin = (-.5,.5), x = x * 1/self.listUI.texture_scale[0], y = -y * 1/self.listUI.texture_scale[1], z = -.5, on_click=self.createObject)
+
+	def createObject(self):
+		print(mouse.hovered_entity.name)
+		#temp = Draggable(parent=scene, scale=1, model=self.objectPath+"chair/chair_01.obj", position=(0, 0))
+
+	def deleteObject(self):
+		pass
 
 vroom = VirtualRoom(25,25,30,None)
 vroom.run()
