@@ -50,15 +50,13 @@ class VirtualRoom:
 
 	def createRoom(self):
 		#scale (가로,두께,세로)
-		self.ground = Entity(model='plane', scale=(self.length,1,self.width), color=color.white, texture='white_cube', texture_scale=(1,1), collider='box')
+		self.ground = Entity(model='plane', scale=(self.length,1,self.width), color=color.white, texture='white_cube', texture_scale=(0,0), collider='box')
 
 		#scale (두께,높이,길이)
-		self.wall = Entity(model='cube', scale=(.01,self.height,self.width), x=self.length/2, y=self.height/2, z=0, rotation_y=0, collider='box', texture='white_cube')
-		self.wall = Entity(model='cube', scale=(.01,self.height,self.length), x=0, y=self.height/2, z=self.width/2, rotation_y=90, collider='box', texture='white_cube')
-		self.wall = Entity(model='cube', scale=(.01,self.height,self.width), x=-self.length/2, y=self.height/2, z=0, rotation_y=180, collider='box', texture='white_cube')
-		self.wall = Entity(model='cube', scale=(.01,self.height,self.length), x=0, y=self.height/2, z=-self.width/2, rotation_y=270, collider='box', texture='white_cube')
-
-		self.wall.texture_scale = (self.wall.scale_z, self.wall.scale_y)
+		self.wall = Entity(model='cube', scale=(1,self.height,self.width), color=color.light_gray, x=self.length/2, y=self.height/2, z=0, rotation_y=0, collider='box', texture='white_cube', texture_scale=(0,0))
+		self.wall = Entity(model='cube', scale=(1,self.height,self.length), color=color.light_gray, x=0, y=self.height/2, z=self.width/2, rotation_y=90, collider='box', texture='white_cube', texture_scale=(0,0))
+		self.wall = Entity(model='cube', scale=(1,self.height,self.width), color=color.light_gray, x=-self.length/2, y=self.height/2, z=0, rotation_y=180, collider='box', texture='white_cube', texture_scale=(0,0))
+		self.wall = Entity(model='cube', scale=(1,self.height,self.length), color=color.light_gray, x=0, y=self.height/2, z=-self.width/2, rotation_y=270, collider='box', texture='white_cube', texture_scale=(0,0))
 
 	def setObjectMenu(self):
 		temp = []
@@ -209,14 +207,15 @@ class VirtualRoom:
 
 	def rotateObject(self, func):
 		func()
-		if self.currentHoldObject == mouse.hovered_entity:
+		if self.currentHoldObject and self.currentHoldObject == mouse.hovered_entity:
 			if self.currentHoldObject.hovered and mouse.right:
 				self.currentHoldObject.rotation_y += 1
 
 	def deleteObject(self):
-		if self.deleteObjectButton.hovered:
+		if self.deleteObjectButton.hovered and self.currentHoldObject:
 			for child in scene.entities:
-				if child.name == self.currentHoldObject.name:
+				if child == self.currentHoldObject:
+					self.currentHoldObject = None
 					destroy(child)
 
 vroom = VirtualRoom(25,25,30,None)
