@@ -7,19 +7,19 @@ from ursina.prefabs.dropdown_menu import DropdownMenu, DropdownMenuButton
 class Room:
 	def __init__(self, width, length, height, objectList):
 		self.app = Ursina()
-		'''
+		
 		self.width = width
 		self.length = length
 		self.height = height
 		self.objectList = objectList
+		
 		'''
-
 		self.width = 11.65*100
 		self.length = 7.25*100
 		self.height = 2.7*100
 		self.objectList = ['chair', 'clock', 'desk']
-
-		self.objectPath = "../object/"
+		'''
+		self.objectPath = "./object/"
 		self.existObjectList = [f for f in os.listdir(self.objectPath) if os.path.isdir(os.path.join(self.objectPath, f))]
 
 		self.ground = None
@@ -226,6 +226,3 @@ class Room:
 				position = self.objectMenu.position - Vec3(.07,.02,0),
 				texture = 'white_cube',
 				color = color.dark_gray)
-
-room = Room(25,25,30,None)
-room.run()

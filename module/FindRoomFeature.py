@@ -180,5 +180,5 @@ class FindRoomFeature:
 
 #return wLength
 
-	def getLength(self):
-		return self.widthLength, self.heightLength, self.objectList
+	def getParameter(self):
+		return self.widthLength[0], self. widthLength[1], self.heightLength, self.objectList
