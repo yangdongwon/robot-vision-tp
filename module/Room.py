@@ -1,9 +1,10 @@
 import os
 from functools import partial
+
 from ursina import *
 from ursina.prefabs.dropdown_menu import DropdownMenu, DropdownMenuButton
 
-class VirtualRoom:
+class Room:
 	def __init__(self, width, length, height, objectList):
 		self.app = Ursina()
 		'''
@@ -31,18 +32,19 @@ class VirtualRoom:
 		self.count = 0
 		self.currentHoldObject = None
 
+		#1920 * 1080
+		window.size = (1920,1080)
 		EditorCamera(rotation=(30,10,0))
 
 
 	def run(self):
-		window.size = window.fullscreen_size
-
 		self.createRoom()
 
+		self.setObjectMenu()
 		self.setObjectListUi()
+		self.setObjectList()
 		self.setDeleteObjectButton()
 
-		self.setObjectMenu()
 #temp = Draggable(parent=scene, model=self.objectPath+"desk/1/desk.obj", scale=.065, position=(0, 0), collider='box')
 
 		self.app.run()
@@ -62,19 +64,18 @@ class VirtualRoom:
 		temp = []
 		for obj in self.objectList:
 			if obj in self.existObjectList:
-				temp.append(DropdownMenuButton(obj, on_click=self.listClick))
+				temp.append(DropdownMenuButton(text=obj, on_click=self.listClick))
 
 		self.objectMenu = DropdownMenu(
 				'object list',
+				parent=camera.ui,
 				buttons=(temp),
-				parent=Draggable(model=Quad(), scale_x=.15,scale_y=.05, position=window.top_right/2),
-				scale_x=1.2,
-				scale_y=1,
+				scale=(.2,.07),
+				position=window.top_right-Vec2(.2,.1)
 				)
-		self.objectMenu.position = self.objectMenu.position+Vec2(.4,0)
 
 	def setObjectListUi(self):
-		self.listUI = Draggable(
+		self.listUI = Button(
 				name = "listUI",
 				parent = camera.ui,
 				model = 'quad',
@@ -85,40 +86,33 @@ class VirtualRoom:
 				texture_scale = (2,3),
 				color = color.light_gray,
 				visible=False)
-
-	def setDeleteObjectButton(self):
-		self.deleteObjectButton = Draggable(
-				name = "deleteObjectButton",
-				parent = camera.ui,
-				model = 'quad',
-				text = 'delete\nobject',
-				scale = (.1, .1),
-				origin = (0,0),
-				position = window.top_right/2 - Vec2(.2,0),
-				texture = 'white_cube',
-				color = color.dark_gray)
+		self.listUI.position = window.top_left - Vec2(0,.3)
 
 	def hideUi(self):
 		self.listUI.visible=False
-
-	def initList(self):
 		for child in self.listUI.children:
-			destroy(child)
+			child.visible = False
+			child.disabled=True
+			child.enabled=False
 
 	def listClick(self):
 		self.hideUi()
-		self.initList()
 		self.currentClickObject = mouse.hovered_entity.text
 		invoke(self.selectObject, delay=0.1)
 
 	def selectObject(self):
 		self.listUI.visible=True
-		self.setObjectList()
-	
+		for child in self.listUI.children:
+			if self.currentClickObject in child.name:
+				child.visible = True
+				child.disabled=False
+				child.enabled=True
+		
 	def findFreeSpace(self):
+		temp = [c for c in self.listUI.children if self.currentClickObject in c.name]
 		for y in range(3):
 			for x in range(2):
-				grid_positions = [(int(e.x*self.listUI.texture_scale[0]), int(e.y*self.listUI.texture_scale[1])) for e in self.listUI.children]
+				grid_positions = [(int(e.x*self.listUI.texture_scale[0]), int(e.y*self.listUI.texture_scale[1])) for e in temp]
 
 				if not (x,-y) in grid_positions:
 					return x, y
@@ -146,34 +140,37 @@ class VirtualRoom:
 		return imgFile, objFile
 
 	def setObjectList(self):
-		imgFile, objFile = self.findFolder()
+		for objectButton in self.objectMenu.buttons:
+			self.currentClickObject = objectButton.text
+			imgFile, objFile = self.findFolder()
+			
+			for img, obj in zip(imgFile, objFile):
+				x, y = self.findFreeSpace()
 
-		for img, obj in zip(imgFile, objFile):
-			x, y = self.findFreeSpace()
+				icon = Button(name = ''.join(img.split('/')[-3:-1]),
+						parent = self.listUI,
+						model = 'quad',
+						texture = img,
+						color = color.white,
+						scale_x = 1/self.listUI.texture_scale[0],
+						scale_y = 1/self.listUI.texture_scale[1],
+						origin = (-.5,.5),
+						x = x * 1/self.listUI.texture_scale[0],
+						y = -y * 1/self.listUI.texture_scale[1],
+						z = -.5,
+						disabled=True,
+						on_click=self.createObject)
 
-			icon = Button(name = ''.join(img.split('/')[-3:-1]),
-					parent = self.listUI,
-					model = 'quad',
-					texture = img,
-					color = color.white,
-					scale_x = 1/self.listUI.texture_scale[0],
-					scale_y = 1/self.listUI.texture_scale[1],
-					origin = (-.5,.5),
-					x = x * 1/self.listUI.texture_scale[0],
-					y = -y * 1/self.listUI.texture_scale[1],
-					z = -.5,
-					on_click=self.createObject)
-
-			icon_path = Text(text=obj,
-					parent=icon,
-					visible=False)
+				icon_path = Text(text=obj,
+						parent=icon,
+						visible=False)
 
 	def createObject(self):
 		obj = mouse.hovered_entity
 		objChild = obj.children[0]
 		objPath = objChild.text
 
-		path = self.objectPath + self.currentClickObject
+		path = '/'.join(objPath.split('/')[:-2])
 		objScale = None
 		zPosition = None
 		zLock = None
@@ -209,14 +206,26 @@ class VirtualRoom:
 		func()
 		if self.currentHoldObject and self.currentHoldObject == mouse.hovered_entity:
 			if self.currentHoldObject.hovered and mouse.right:
-				self.currentHoldObject.rotation_y += 1
+				self.currentHoldObject.rotation_y += 0.5
 
 	def deleteObject(self):
 		if self.deleteObjectButton.hovered and self.currentHoldObject:
 			for child in scene.entities:
 				if child == self.currentHoldObject:
-					self.currentHoldObject = None
 					destroy(child)
+					self.currentHoldObject = None
 
-vroom = VirtualRoom(25,25,30,None)
-vroom.run()
+	def setDeleteObjectButton(self):
+		self.deleteObjectButton = Button(
+				name = "deleteObjectButton",
+				parent = camera.ui,
+				model = 'quad',
+				text = 'delete\nobject',
+				scale = (.1, .1),
+				origin = (0,0),
+				position = self.objectMenu.position - Vec3(.07,.02,0),
+				texture = 'white_cube',
+				color = color.dark_gray)
+
+room = Room(25,25,30,None)
+room.run()
