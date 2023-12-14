@@ -8,17 +8,18 @@ class Room:
 	def __init__(self, width, length, height, objectList):
 		self.app = Ursina()
 		
-		self.width = width
-		self.length = length
-		self.height = height
+		self.width = width*100 # cm
+		self.length = length*100 # cm
+		self.height = height*100 # cm
 		self.objectList = objectList
 		
 		'''
 		self.width = 11.65*100
 		self.length = 7.25*100
 		self.height = 2.7*100
-		self.objectList = ['chair', 'clock', 'desk']
+		self.objectList = ['chair', 'clock', 'dining table']
 		'''
+
 		self.objectPath = "./object/"
 		self.existObjectList = [f for f in os.listdir(self.objectPath) if os.path.isdir(os.path.join(self.objectPath, f))]
 
@@ -45,7 +46,7 @@ class Room:
 		self.setObjectList()
 		self.setDeleteObjectButton()
 
-#temp = Draggable(parent=scene, model=self.objectPath+"desk/1/desk.obj", scale=.065, position=(0, 0), collider='box')
+#temp = Draggable(parent=scene, model=self.objectPath+"table1.obj", scale=1, position=(0, 40, 0), collider='box')
 
 		self.app.run()
 
@@ -226,3 +227,7 @@ class Room:
 				position = self.objectMenu.position - Vec3(.07,.02,0),
 				texture = 'white_cube',
 				color = color.dark_gray)
+'''
+r = Room(1165, 725, 270, ['dining table'])	
+r.run()		
+'''
