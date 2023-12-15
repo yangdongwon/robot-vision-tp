@@ -41,7 +41,7 @@ class FindRoomFeature:
 		number = 0 
 		for wPath in self.widthImgPath:
 			wImg = self.selectPreProcessing(wPath, 'w')
-			self.objectList.append(self.findObject(wPath))
+			self.objectList.append(self.findObject(wPath, 'w'))
 			if number % 2 ==0 :
 				self.widthLength.append(self.calWidthLength(wImg))
 			else: 
@@ -49,18 +49,19 @@ class FindRoomFeature:
 			number+=1
 		hImg = self.selectPreProcessing(self.heightImgPath, 'h')
 		self.heightLength = self.calHeightLength(hImg)
-		self.objectList.append(self.findObject(self.objImgPath))
+		self.objectList.append(self.findObject(self.objImgPath, 'h'))
 		
 		self.widthmean = np.mean(self.widthLength) #가로 평균 
 		self.widthmean_2 = np.mean(self.widthlength_2) #세로 평균 
 		
 		self.objectList = list(dict.fromkeys(list(itertools.chain.from_iterable(self.objectList))))
 
-		MessageShow.messageShow_length_mean(self.widthmean,self.widthmean_2,self.heightLength)
+		MessageShow.messageShow_length_mean(self.widthmean,self.widthmean_2,self.heightLength, self.objectList)
 
 	def readImg(self, path):
 		return cv2.imread(path, cv2.IMREAD_COLOR)
 	
+	# 전처리 
 	def preProcessing(self, path):
 		return self.preProcessingInstance.transformImg(path)
 	
@@ -87,8 +88,9 @@ class FindRoomFeature:
 		else:
 			return 0
 			
-	def findObject(self, path):
-		return self.yoloModelInstance.predict(path)
+	# YOLO 사용한 객체 인식
+	def findObject(self, path, direction):
+		return self.yoloModelInstance.predict(path, direction)
 
 	#ROI 설정(라인검출 전 전처리)
 	def setRoi(self, img, direction):
@@ -112,6 +114,7 @@ class FindRoomFeature:
 
 		return roi, length
 
+	# canny edge detection과 hough transform을 사용하여 모서리 추출, 그 중  직선 추출 
 	def findLine(self, img):
 		lineImg = []
 		for rImg in img:
@@ -132,7 +135,7 @@ class FindRoomFeature:
 		#print(Direction, "Length ",length, "m")
 		return length
 	
-	#높이 측정 
+	# 높이 측정, 각 직선의 기울기를 계산하여 높이의 경우 기울기가 가장 작은 직선으로 정렬 후 그 중 y좌표가 가장 높은 곳과 낮은 곳 추출
 	def calHeightLength(self, img):
 		roiImg, length = self.setRoi(img, 'h')
 		direction = 'h'
@@ -175,7 +178,6 @@ class FindRoomFeature:
 			hlength = hPixel*pixel_length
 			
 			print("hWidth",hlength,"m")
-			#hLength = hPixel / paperPixel
 
 			cv2.imshow("upper_line", roiImg[0])
 			cv2.imshow("under_line", roiImg[1])
@@ -200,7 +202,7 @@ class FindRoomFeature:
 				MessageShow.messageShow_length(hlength,direction)
 				return hlength
 
-	#가로, 세로 측정 
+	# 벽 모서리 계산, 위와 마찬가지로 추출된 직선 중 기울기가 큰 순서대로 정렬 후 x좌표가 가장 큰 것과 작은 것이 각 벽의 모서리로 판단하고 추출
 	def calWidthLength(self, img):
 		roiImg, length = self.setRoi(img, 'w')
 		direction = 'w'
@@ -263,7 +265,7 @@ class FindRoomFeature:
 				cv2.waitKey(10000)
 				MessageShow.messageShow_length(wlength,direction)
 				selfwlength = self.selectSelfcorner(img,direction)
-				if selfwlength == 'yes':
+				if selfwlength != 0:
 					wlength = selfwlength
 					MessageShow.messageShow_length(wlength,direction)
 					print("width",wlength, "m")
@@ -283,8 +285,6 @@ class FindRoomFeature:
 				MessageShow.messageShow_length(wlength,direction)
 				return wlength
 
+	#측정된 파라미터 getter
 	def getParameter(self):
 		return self.widthmean, self.widthmean_2, self.heightLength, self.objectList
-
-
-

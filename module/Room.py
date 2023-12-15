@@ -13,13 +13,6 @@ class Room:
 		self.height = height*100 # cm
 		self.objectList = objectList
 		
-		'''
-		self.width = 11.65*100
-		self.length = 7.25*100
-		self.height = 2.7*100
-		self.objectList = ['chair', 'clock', 'dining table']
-		'''
-
 		self.objectPath = "./object/"
 		self.existObjectList = [f for f in os.listdir(self.objectPath) if os.path.isdir(os.path.join(self.objectPath, f))]
 
@@ -46,11 +39,10 @@ class Room:
 		self.setObjectList()
 		self.setDeleteObjectButton()
 
-#temp = Draggable(parent=scene, model=self.objectPath+"table1.obj", scale=1, position=(0, 40, 0), collider='box')
-
 		self.app.run()
 
 
+	# 방 생성
 	def createRoom(self):
 		#scale (가로,두께,세로)
 		self.ground = Entity(model='plane', scale=(self.length,1,self.width), color=color.white, texture='white_cube', texture_scale=(0,0), collider='box')
@@ -61,6 +53,7 @@ class Room:
 		self.wall = Entity(model='cube', scale=(1,self.height,self.width), color=color.light_gray, x=-self.length/2, y=self.height/2, z=0, rotation_y=180, collider='box', texture='white_cube', texture_scale=(0,0))
 		self.wall = Entity(model='cube', scale=(1,self.height,self.length), color=color.light_gray, x=0, y=self.height/2, z=-self.width/2, rotation_y=270, collider='box', texture='white_cube', texture_scale=(0,0))
 
+	# 추출된 객체를 선택할 리스트 생성
 	def setObjectMenu(self):
 		temp = []
 		for obj in self.objectList:
@@ -75,6 +68,7 @@ class Room:
 				position=window.top_right-Vec2(.2,.1)
 				)
 
+	# 리스트에서 선택한 객체의 종류를 보여주는 리스트 생성
 	def setObjectListUi(self):
 		self.listUI = Button(
 				name = "listUI",
@@ -140,6 +134,7 @@ class Room:
 
 		return imgFile, objFile
 
+	# 리스트에서 선택된 객체의 사진과 오브젝트 파일 로딩 
 	def setObjectList(self):
 		for objectButton in self.objectMenu.buttons:
 			self.currentClickObject = objectButton.text
@@ -166,6 +161,7 @@ class Room:
 						parent=icon,
 						visible=False)
 
+	# 선택된 객체 생성
 	def createObject(self):
 		obj = mouse.hovered_entity
 		objChild = obj.children[0]
@@ -197,18 +193,30 @@ class Room:
 				lock=(0,zLock,0),
 				on_click=self.holdObject,
 				drop=self.deleteObject)
-		draggableObject.update = partial(self.rotateObject, draggableObject.update)
+		draggableObject.update = partial(self.update, draggableObject.update)
+		draggableObject.input = partial(self.input, draggableObject.input)
 		self.count += 1
 
 	def holdObject(self):
 		self.currentHoldObject = mouse.hovered_entity
 
-	def rotateObject(self, func):
+	# 선택된 객체 오른쪽 버튼 클릭시 회전
+	def update(self, func):
 		func()
 		if self.currentHoldObject and self.currentHoldObject == mouse.hovered_entity:
 			if self.currentHoldObject.hovered and mouse.right:
 				self.currentHoldObject.rotation_y += 0.5
 
+	# 선택된 객체 키보드 위, 아래 화살표로 올리고 내리기
+	def input(self, func, key):
+		func(key)
+		if self.currentHoldObject:
+			if key == 'up arrow':
+				self.currentHoldObject.position = self.currentHoldObject.position + Vec3(0,2,0)
+			elif key == 'down arrow':
+				self.currentHoldObject.position = self.currentHoldObject.position - Vec3(0,2,0)
+
+	# 객체를 삭제 버튼으로 드래그시 삭제
 	def deleteObject(self):
 		if self.deleteObjectButton.hovered and self.currentHoldObject:
 			for child in scene.entities:
@@ -227,7 +235,3 @@ class Room:
 				position = self.objectMenu.position - Vec3(.07,.02,0),
 				texture = 'white_cube',
 				color = color.dark_gray)
-'''
-r = Room(1165, 725, 270, ['dining table'])	
-r.run()		
-'''

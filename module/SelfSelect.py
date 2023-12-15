@@ -34,10 +34,7 @@ class SelfSelect:
         if self.times == 4: 
             # 윈도우 종료
             cv2.destroyAllWindows()
-        #print("Wall Line:", self.wallline)
-        #print("Paper Line:", self.paperline)
         if self.Direction == 'w':
             return self.wallline[0][0], self.wallline[1][0], self.paperline[0][0], self.paperline[1][0]
         elif self.Direction == 'h':
             return self.wallline[0][1], self.wallline[1][1], self.paperline[0][1], self.paperline[1][1]
-# Create an instance of the class

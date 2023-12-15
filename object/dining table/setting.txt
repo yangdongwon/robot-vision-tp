@@ -1,2 +1,2 @@
  # number scale z_position lock
-1 1 40 1
+1 .7 40 1
